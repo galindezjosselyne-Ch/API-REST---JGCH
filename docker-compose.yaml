@@ -1,0 +1,46 @@
+version: '3.8'
+services:
+  api:
+    build:
+      context: ./ProductsApi
+      dockerfile: Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - JWT_SECRET=DEV_SECRET_KEY_SUPER_LONG_2025_12345678
+      - JWT_ISSUER=ProductsApi
+      - AllowedHosts="*"
+      - AZURE_BLOB_CONN=${AZURE_BLOB_CONN:-} # deja vacío para dev local
+    ports:
+      - "5000:5000"
+    networks:
+      - appnet
+
+  frontend:
+    build:
+      context: ./nuxt-app
+      dockerfile: Dockerfile
+    environment:
+      - NUXT_PUBLIC_API_BASE=http://localhost:5000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    networks:
+      - appnet
+
+    
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    ports:
+      - "301:80"
+    depends_on:
+      - api
+      - frontend
+    networks:
+      - appnet
+
+networks:
+  appnet:
+    driver: bridge
